@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>天气预报 · 终版精致UI</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #a1c4fd 0%, #60a3e9 50%, #2b78c9 100%);
+      background-attachment: fixed;
+      padding: 48px 20px;
+      color: #ffffff;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* 通用卡片样式统一复用 */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(14px);
+      border-radius: 22px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      transition: transform 0.28s ease, box-shadow 0.28s ease;
+    }
+    .glass-card:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+    }
+
+    /* 搜索栏 */
+    .search-wrap {
+      padding: 20px;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 26px;
+      animation: fadeUp 0.7s ease;
+    }
+
+    #cityInput {
+      flex: 1;
+      padding: 16px 22px;
+      border: none;
+      border-radius: 16px;
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.94);
+      color: #1a2333;
+      outline: none;
+      transition: 0.25s;
+    }
+    #cityInput:focus {
+      box-shadow: 0 0 0 3px rgba(66, 147, 226, 0.45);
+    }
+
+    #searchBtn {
+      padding: 16px 28px;
+      border: none;
+      border-radius: 16px;
+      background: #1967b3;
+      color: #fff;
+      font-weight: 500;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.25s ease;
+    }
+    #searchBtn:hover {
+      background: #155799;
+      transform: translateY(-2px);
+    }
+    #searchBtn:active {
+      transform: translateY(0px);
+    }
+
+    /* 当前天气卡片 */
+    .now-weather-card {
+      padding: 40px 28px;
+      text-align: center;
+      margin-bottom: 30px;
+      animation: fadeUp 0.7s ease 0.1s both;
+    }
+
+    .city-title {
+      font-size: 26px;
+      letter-spacing: 1px;
+      opacity: 0.97;
+    }
+
+    .weather-icon-lg {
+      font-size: 78px;
+      margin: 20px 0;
+    }
+
+    .temp-value {
+      font-size: 86px;
+      font-weight: 300;
+      line-height: 1;
+      margin-bottom: 14px;
+    }
+
+    .weather-desc-text {
+      font-size: 20px;
+      opacity: 0.92;
+    }
+
+    .loading-wrap {
+      margin-top: 20px;
+      font-size: 15px;
+      opacity: 0.85;
+    }
+
+    /* 预报区标题 */
+    .forecast-header {
+      font-size: 21px;
+      margin-bottom: 18px;
+      padding-left: 6px;
+      opacity: 0.96;
+      animation: fadeUp 0.7s ease 0.2s both;
+    }
+
+    /* 预报网格 */
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+      gap: 16px;
+    }
+
+    .forecast-item {
+      padding: 22px 14px;
+      text-align: center;
+      animation: fadeUp 0.7s ease 0.3s both;
+    }
+    .forecast-item:hover {
+      transform: translateY(-5px);
+    }
+
+    .forecast-date {
+      font-size: 14px;
+      opacity: 0.87;
+      margin-bottom: 10px;
+    }
+
+    .forecast-icon {
+      font-size: 38px;
+      margin: 10px 0;
+    }
+
+    .forecast-text {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .forecast-temp-range {
+      font-size: 17px;
+      font-weight: 500;
+    }
+
+    /* 入场动画 */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 移动端适配 */
+    @media (max-width: 480px) {
+      .search-wrap {
+        flex-direction: column;
+      }
+      .temp-value {
+        font-size: 70px;
+      }
+      .weather-icon-lg {
+        font-size: 64px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- 搜索区域 -->
+  <div class="search-wrap glass-card">
+    <input type="text" id="cityInput" placeholder="请输入城市名称：北京 / 上海 / 广州 / 成都">
+    <button id="searchBtn">查询天气</button>
+  </div>
+
+  <!-- 当前天气 -->
+  <div class="now-weather-card glass-card">
+    <div class="city-title" id="cityName">--</div>
+    <div class="weather-icon-lg" id="weatherIcon">🌤️</div>
+    <div class="temp-value" id="temp">--℃</div>
+    <div class="weather-desc-text" id="weatherDesc">--</div>
+    <div class="loading-wrap" id="loading" style="display: none;">加载天气数据中…</div>
+  </div>
+
+  <!-- 未来预报 -->
+  <div class="forecast-header">未来天气预报</div>
+  <div class="forecast-grid" id="forecastList"></div>
+</div>
+
+<script>
+// 获取DOM元素
+const cityInput = document.getElementById('cityInput');
+const searchBtn = document.getElementById('searchBtn');
+const cityNameEl = document.getElementById('cityName');
+const weatherIconEl = document.getElementById('weatherIcon');
+const tempEl = document.getElementById('temp');
+const weatherDescEl = document.getElementById('weatherDesc');
+const forecastListEl = document.getElementById('forecastList');
+const loadingEl = document.getElementById('loading');
+
+// ==============================
+// 替换成你自己的和风天气Key
+// ==============================
+const API_KEY = "你的和风天气KEY";
+
+// 绑定事件：点击 + 回车
+searchBtn.addEventListener('click', getWeatherData);
+cityInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') getWeatherData();
+});
+
+/**
+ * 根据天气文字匹配Emoji图标
+ * @param {string} text 天气描述文字
+ * @returns {string} emoji
+ */
+function getWeatherEmoji(text) {
+  if (/晴/.test(text)) return '☀️';
+  if (/多云|阴/.test(text)) return '⛅';
+  if (/小雨|中雨|大雨|雨/.test(text)) return '🌧️';
+  if (/雷|雷阵雨/.test(text)) return '⛈️';
+  if (/雪|小雪|大雪/.test(text)) return '❄️';
+  if (/雾|霾/.test(text)) return '🌫️';
+  return '🌤️';
+}
+
+/**
+ * 请求天气主逻辑
+ */
+async function getWeatherData() {
+  const city = cityInput.value.trim();
+  if (!city) {
+    alert('请输入城市名称');
+    return;
+  }
+
+  loadingEl.style.display = 'block';
+  forecastListEl.innerHTML = '';
+
+  try {
+    // 1. 获取城市定位ID
+    const geoRes = await fetch(`https://geoapi.qweather.com/v2/city/lookup?location=${encodeURIComponent(city)}&key=${API_KEY}`);
+    const geoData = await geoRes.json();
+
+    if (geoData.code !== '200') {
+      throw new Error('城市不存在，请重新输入');
+    }
+
+    const location = geoData.location[0];
+    cityNameEl.innerText = location.name;
+
+    // 2. 获取实时天气
+    const nowRes = await fetch(`https://devapi.qweather.com/v7/weather/now?location=${location.id}&key=${API_KEY}`);
+    const nowData = await nowRes.json();
+
+    tempEl.innerText = `${nowData.now.temp}℃`;
+    weatherDescEl.innerText = nowData.now.text;
+    weatherIconEl.innerText = getWeatherEmoji(nowData.now.text);
+
+    // 3. 获取三日预报
+    const forecastRes = await fetch(`https://devapi.qweather.com/v7/weather/3d?location=${location.id}&key=${API_KEY}`);
+    const forecastData = await forecastRes.json();
+
+    forecastData.daily.forEach(day => {
+      const item = document.createElement('div');
+      item.className = 'forecast-item glass-card';
+      item.innerHTML = `
+        <div class="forecast-date">${day.fxDate}</div>
+        <div class="forecast-icon">${getWeatherEmoji(day.textDay)}</div>
+        <div class="forecast-text">${day.textDay}</div>
+        <div class="forecast-temp-range">${day.tempMin} ~ ${day.tempMax}℃</div>
+      `;
+      forecastListEl.appendChild(item);
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert('数据请求失败：' + err.message);
+  } finally {
+    loadingEl.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>
